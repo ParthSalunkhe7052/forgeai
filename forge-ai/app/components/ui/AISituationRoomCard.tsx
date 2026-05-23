@@ -102,7 +102,7 @@ export default function AISituationRoomCard({ data, onOpenHealth, onOpenRisk }: 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-5">
         
         {/* Left: Gauges & Scores (4 cols) */}
-        <div className="lg:col-span-4 grid grid-cols-2 gap-4 border-r border-[var(--border)] pr-6 max-lg:border-r-0 max-lg:pr-0 max-lg:pb-4 max-lg:border-b">
+        <div className="lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 gap-4 border-r border-[var(--border)] pr-6 max-lg:border-r-0 max-lg:pr-0 max-lg:pb-4 max-lg:border-b">
           {/* Health Gauge */}
           <div
             onClick={onOpenHealth}

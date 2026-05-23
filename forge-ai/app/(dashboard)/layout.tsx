@@ -170,7 +170,7 @@ export default function DashboardLayout({
 
         {/* Main Dashboard Pages */}
         <main
-          className="flex-1 overflow-y-auto px-6 py-6"
+          className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6"
           style={{ background: "var(--bg-base)" }}
         >
           <div className="max-w-[1600px] mx-auto w-full h-full">

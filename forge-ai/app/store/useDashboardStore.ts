@@ -26,6 +26,7 @@ interface DashboardState {
   copilotQuery: string | null;
   copilotTab: "overview" | "insights" | "actions" | "chat" | "reports" | null;
   actions: ActionItem[];
+  isMobileSidebarOpen: boolean;
   
   setPlantId: (id: string) => void;
   setRole: (role: RoleType) => void;
@@ -33,6 +34,7 @@ interface DashboardState {
   setIsConnected: (connected: boolean) => void;
   setLiveDashboardData: (data: any) => void;
   setCopilotOpen: (open: boolean) => void;
+  setMobileSidebarOpen: (open: boolean) => void;
   triggerCopilotAction: (
     query: string,
     tab?: "overview" | "insights" | "actions" | "chat" | "reports"
@@ -112,6 +114,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   copilotQuery: null,
   copilotTab: null,
   actions: DEFAULT_ACTIONS,
+  isMobileSidebarOpen: false,
 
   setPlantId: (id) => set({ selectedPlantId: id }),
   setRole: (role) => set({ selectedRole: role }),
@@ -122,6 +125,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   setIsConnected: (connected) => set({ isConnected: connected }),
   setLiveDashboardData: (data) => set({ liveDashboardData: data }),
   setCopilotOpen: (open) => set({ isCopilotOpen: open }),
+  setMobileSidebarOpen: (open) => set({ isMobileSidebarOpen: open }),
   triggerCopilotAction: (query, tab = "chat") =>
     set({
       isCopilotOpen: true,

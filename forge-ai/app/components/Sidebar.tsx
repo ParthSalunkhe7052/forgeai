@@ -13,8 +13,10 @@ import {
   ChevronRight,
   Sparkles,
   ClipboardList,
+  X,
 } from "lucide-react";
 import { cn } from "@/app/utils/cn";
+import { useDashboardStore } from "../store/useDashboardStore";
 
 interface SidebarProps {
   className?: string;
@@ -50,19 +52,30 @@ const menuItems = [
 export default function Sidebar({ className }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
+  const { isMobileSidebarOpen, setMobileSidebarOpen } = useDashboardStore();
 
   return (
-    <aside
-      className={cn(
-        "relative h-screen flex flex-col z-20 transition-all duration-300 ease-in-out",
-        isCollapsed ? "w-14" : "w-[200px]",
-        className
+    <>
+      {/* Backdrop overlay for mobile drawer */}
+      {isMobileSidebarOpen && (
+        <div
+          onClick={() => setMobileSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px] md:hidden transition-opacity duration-300"
+        />
       )}
-      style={{
-        background: "var(--bg-surface)",
-        borderRight: "1px solid var(--border)",
-      }}
-    >
+
+      <aside
+        className={cn(
+          "fixed md:relative h-screen flex flex-col z-50 md:z-20 transition-all duration-300 ease-in-out",
+          isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+          isCollapsed ? "w-14" : "w-[200px]",
+          className
+        )}
+        style={{
+          background: "var(--bg-surface)",
+          borderRight: "1px solid var(--border)",
+        }}
+      >
       {/* Logo area */}
       <div
         className="flex items-center justify-between px-4"
@@ -115,7 +128,7 @@ export default function Sidebar({ className }: SidebarProps) {
         {!isCollapsed && (
           <button
             onClick={() => setIsCollapsed(true)}
-            className="p-1 rounded transition-colors duration-150"
+            className="hidden md:block p-1 rounded transition-colors duration-150"
             style={{ color: "var(--text-muted)" }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-secondary)")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
@@ -123,6 +136,13 @@ export default function Sidebar({ className }: SidebarProps) {
             <ChevronLeft className="w-4 h-4" />
           </button>
         )}
+        <button
+          onClick={() => setMobileSidebarOpen(false)}
+          className="block md:hidden p-1.5 rounded transition-colors duration-150 hover:bg-[var(--bg-elevated)]"
+          style={{ color: "var(--text-muted)" }}
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -134,6 +154,7 @@ export default function Sidebar({ className }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => setMobileSidebarOpen(false)}
               className={cn(
                 "group flex items-center gap-3 px-3 py-2.5 rounded-[6px] transition-colors duration-150 relative",
                 isActive ? "cursor-default" : "cursor-pointer"
@@ -247,5 +268,6 @@ export default function Sidebar({ className }: SidebarProps) {
         </div>
       )}
     </aside>
+    </>
   );
 }

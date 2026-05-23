@@ -3,7 +3,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDashboardStore } from "../store/useDashboardStore";
-import { Bell, ChevronDown, Factory, Check } from "lucide-react";
+import { Bell, ChevronDown, Factory, Check, Menu } from "lucide-react";
 import { cn } from "@/app/utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -32,6 +32,7 @@ export default function Topbar() {
     countdown,
     isConnected,
     setPlantId,
+    setMobileSidebarOpen,
   } = useDashboardStore();
 
   const [isOpen, setIsOpen] = React.useState(false);
@@ -107,7 +108,7 @@ export default function Topbar() {
 
   return (
     <header
-      className="flex items-center justify-between w-full px-6"
+      className="flex items-center justify-between w-full px-4 md:px-6"
       style={{
         height: 52,
         background: "var(--bg-surface)",
@@ -115,25 +116,34 @@ export default function Topbar() {
         flexShrink: 0,
       }}
     >
-      {/* Left: Page title */}
-      <h1
-        style={{
-          fontSize: 15,
-          fontWeight: 500,
-          color: "var(--text-primary)",
-          letterSpacing: 0,
-        }}
-      >
-        {PAGE_TITLES[selectedRole] ?? "Forge AI"}
-      </h1>
+      {/* Left: Mobile Menu toggle + Page title */}
+      <div className="flex items-center gap-2 min-w-0">
+        <button
+          onClick={() => setMobileSidebarOpen(true)}
+          className="md:hidden p-1 rounded transition-colors duration-150 hover:bg-[var(--bg-elevated)] cursor-pointer text-white"
+          title="Open Menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <h1
+          className="truncate text-[13px] sm:text-[15px]"
+          style={{
+            fontWeight: 500,
+            color: "var(--text-primary)",
+            letterSpacing: 0,
+          }}
+        >
+          {PAGE_TITLES[selectedRole] ?? "Forge AI"}
+        </h1>
+      </div>
 
       {/* Right: Controls */}
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-2 sm:gap-4 md:gap-5">
         {/* Plant selector */}
         <div ref={dropdownRef} className="relative flex flex-col" style={{ gap: 1 }}>
           <span
             style={{
-              fontSize: 9,
+              fontSize: 8,
               fontWeight: 600,
               color: "var(--text-muted)",
               textTransform: "uppercase",
@@ -147,24 +157,23 @@ export default function Topbar() {
           </span>
           <button
             onClick={() => !isLoading && setIsOpen(!isOpen)}
-            className="flex items-center justify-between gap-2 px-3 py-1 border rounded-md transition-all duration-150 cursor-pointer select-none"
+            className="flex items-center justify-between gap-1 px-2 py-0.5 border rounded transition-all duration-150 cursor-pointer select-none min-w-[110px] max-w-[145px] sm:min-w-[195px] sm:max-w-none"
             style={{
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: 500,
               fontFamily: "'DM Mono', monospace",
               background: "var(--bg-elevated)",
               borderColor: isOpen ? "var(--border-accent)" : "var(--border-strong)",
               color: "var(--text-primary)",
-              minWidth: 195,
               height: 24,
               boxShadow: isOpen ? "0 0 10px rgba(245, 158, 11, 0.15)" : "none",
             }}
           >
-            <div className="flex items-center gap-1.5 min-w-0">
-              <Factory size={11} className={selectedPlant?.status === "partially degraded" ? "text-amber-500" : "text-emerald-500"} />
-              <span className="truncate">{selectedPlant?.name ?? "Loading..."}</span>
+            <div className="flex items-center gap-1 min-w-0">
+              <Factory size={10} className={selectedPlant?.status === "partially degraded" ? "text-amber-500" : "text-emerald-500"} />
+              <span className="truncate">{selectedPlant?.name?.replace("Plant ", "P-") ?? "Loading..."}</span>
             </div>
-            <ChevronDown size={11} className={cn("transition-transform duration-200 text-muted", isOpen && "rotate-180")} />
+            <ChevronDown size={10} className={cn("transition-transform duration-200 text-muted", isOpen && "rotate-180")} />
           </button>
 
           <AnimatePresence>
@@ -234,6 +243,7 @@ export default function Topbar() {
 
         {/* Divider */}
         <div
+          className="hidden md:block"
           style={{
             width: 1,
             height: 28,
@@ -244,6 +254,7 @@ export default function Topbar() {
 
         {/* Sync timer */}
         <span
+          className="hidden lg:inline"
           style={{
             fontFamily: "'DM Mono', monospace",
             fontSize: 11,
@@ -271,6 +282,7 @@ export default function Topbar() {
             }}
           />
           <span
+            className="hidden sm:inline"
             style={{
               fontFamily: "'DM Mono', monospace",
               fontSize: 11,
@@ -282,17 +294,18 @@ export default function Topbar() {
             }}
           >
             {selectedRole === "reports"
-              ? "REPORT ENGINE"
+              ? "REPORT"
               : isConnected
               ? "LIVE"
               : selectedRole === "technical"
-              ? "MOCK DATA"
-              : "OFFLINE"}
+              ? "MOCK"
+              : "OFF"}
           </span>
         </div>
 
         {/* Divider */}
         <div
+          className="hidden sm:block"
           style={{
             width: 1,
             height: 28,
@@ -314,8 +327,6 @@ export default function Topbar() {
         >
           <Bell className="w-4 h-4" />
         </button>
-
-
 
         {/* User avatar */}
         <div

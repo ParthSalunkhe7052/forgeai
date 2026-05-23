@@ -273,9 +273,9 @@ export default function ITOTDashboard() {
                     <thead>
                       <tr className="border-b border-[var(--border-strong)] bg-[#101116] text-[var(--text-muted)] sticky top-0">
                         <th className="p-2.5">System Name</th>
-                        <th className="p-2.5">Type</th>
+                        <th className="p-2.5 hidden md:table-cell">Type</th>
                         <th className="p-2.5">Uptime MTD</th>
-                        <th className="p-2.5">Ping</th>
+                        <th className="p-2.5 hidden sm:table-cell">Ping</th>
                         <th className="p-2.5 text-right">Status</th>
                       </tr>
                     </thead>
@@ -292,9 +292,9 @@ export default function ITOTDashboard() {
                             )} />
                             {sys.name}
                           </td>
-                          <td className="p-2.5 text-[var(--text-secondary)]">{sys.category} Node</td>
+                          <td className="p-2.5 text-[var(--text-secondary)] hidden md:table-cell">{sys.category} Node</td>
                           <td className="p-2.5 text-white">{sys.uptime.toFixed(2)}%</td>
-                          <td className="p-2.5 text-[var(--text-secondary)]">{sys.latency}</td>
+                          <td className="p-2.5 text-[var(--text-secondary)] hidden sm:table-cell">{sys.latency}</td>
                           <td className="p-2.5 text-right">
                             <span className={cn("text-[9px] px-1.5 py-0.5 rounded border font-semibold uppercase", getStatusColorClass(sys.status))}>
                               {sys.status}
@@ -406,8 +406,8 @@ export default function ITOTDashboard() {
                     <tr className="border-b border-[var(--border-strong)] bg-[#101116] text-[var(--text-muted)]">
                       <th className="p-2.5">Severity</th>
                       <th className="p-2.5">Incident Title</th>
-                      <th className="p-2.5">Raised</th>
-                      <th className="p-2.5">Owner</th>
+                      <th className="p-2.5 hidden sm:table-cell">Raised</th>
+                      <th className="p-2.5 hidden md:table-cell">Owner</th>
                       <th className="p-2.5 text-right">Status</th>
                     </tr>
                   </thead>
@@ -424,8 +424,8 @@ export default function ITOTDashboard() {
                           </span>
                         </td>
                         <td className="p-2.5 font-bold text-white">{inc.title}</td>
-                        <td className="p-2.5 text-[var(--text-secondary)]">{inc.raisedAt}</td>
-                        <td className="p-2.5 text-[var(--text-secondary)]">{inc.owner}</td>
+                        <td className="p-2.5 text-[var(--text-secondary)] hidden sm:table-cell">{inc.raisedAt}</td>
+                        <td className="p-2.5 text-[var(--text-secondary)] hidden md:table-cell">{inc.owner}</td>
                         <td className="p-2.5 text-right">
                           <span className={cn("text-[9px] font-bold uppercase", 
                             inc.status === "Mitigated" ? "text-[var(--status-green)]" : "text-[var(--status-amber)]"
@@ -563,8 +563,8 @@ export default function ITOTDashboard() {
                     <tr className="border-b border-[var(--border-strong)] bg-[#101116] text-[var(--text-muted)]">
                       <th className="p-2.5">Target System</th>
                       <th className="p-2.5">Last Snap</th>
-                      <th className="p-2.5">RPO</th>
-                      <th className="p-2.5">RTO</th>
+                      <th className="p-2.5 hidden sm:table-cell">RPO</th>
+                      <th className="p-2.5 hidden md:table-cell">RTO</th>
                       <th className="p-2.5 text-right">Job Status</th>
                     </tr>
                   </thead>
@@ -573,10 +573,10 @@ export default function ITOTDashboard() {
                       <tr key={bu.system} className="hover:bg-[var(--bg-elevated)]/20">
                         <td className="p-2.5 font-bold text-white">{bu.system}</td>
                         <td className="p-2.5 text-[var(--text-secondary)]">{bu.lastBackup}</td>
-                        <td className="p-2.5 text-[var(--text-secondary)]">
+                        <td className="p-2.5 text-[var(--text-secondary)] hidden sm:table-cell">
                           {bu.rpoActualMins >= 60 ? `${(bu.rpoActualMins/60).toFixed(1)}h` : `${bu.rpoActualMins}m`}
                         </td>
-                        <td className="p-2.5 text-[var(--text-secondary)]">{bu.rtoActualHours.toFixed(1)}h</td>
+                        <td className="p-2.5 text-[var(--text-secondary)] hidden md:table-cell">{bu.rtoActualHours.toFixed(1)}h</td>
                         <td className="p-2.5 text-right">
                           <span className={cn("text-[9px] px-1.5 py-0.5 rounded border font-semibold uppercase", getStatusColorClass(bu.status))}>
                             {bu.status}

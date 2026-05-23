@@ -179,7 +179,7 @@ export default function ActionsCenter() {
                 {/* Label */}
                 <span 
                   className={cn(
-                    "absolute top-6 text-[8px] font-bold tracking-wider whitespace-nowrap transition-colors",
+                    "absolute top-6 text-[7px] sm:text-[9px] font-bold tracking-wider whitespace-nowrap transition-colors",
                     isActive ? "text-white" : "text-[var(--text-muted)]"
                   )}
                 >

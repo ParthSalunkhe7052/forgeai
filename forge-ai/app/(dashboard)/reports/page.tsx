@@ -579,8 +579,7 @@ export default function ReportsHub() {
 
         {/* Reports registry */}
         <div
-          className="rounded-lg p-5 flex flex-col bg-[var(--bg-surface)] border border-[var(--border)]"
-          style={{ height: 490 }}
+          className="rounded-lg p-5 flex flex-col bg-[var(--bg-surface)] border border-[var(--border)] h-[280px] lg:h-[490px]"
         >
           <div className="flex items-center gap-2 mb-4">
             <FileSpreadsheet className="w-4 h-4 text-[var(--text-secondary)]" />
