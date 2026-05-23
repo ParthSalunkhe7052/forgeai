@@ -90,7 +90,7 @@ const getWelcomeMessage = (role: string) => {
     case "cxo":
       return "Welcome to Forge AI Command Center (Executive Room). Enter your questions regarding financial telemetry, potential monthly savings, or carbon offset regulations.";
     case "technical":
-      return "Forge AI diagnostics online. Pune Furnace-2 is reporting anomalous vibrations (3.8 mm/s). How can I assist you with analyzing root causes or forecasting failures?";
+      return "IT/OT telemetry diagnostics online. Historian DB sync timeout (P1) is active causing an 8-second pipeline lag on Plant B. Also, DR Cloud Replica sync is failed (54h lag). Pune Furnace-2 vibration is at 4.2mm/s. How can I assist with network, database, or mechanical failure diagnostics?";
     case "floor":
       return "Floor assistant active. Raw iron ore stockpile stands at 14.2k Tons. JSW Steel shipment logistics are scheduled for 10 PM. Ask me to draft work orders or run inventory audits.";
     default:
@@ -105,6 +105,145 @@ const getPlantName = (plantId: string) => {
   if (plantId.includes("surat") || plantId === "surat-uuid") return "Plant C – Surat";
   return "Plant B – Pune";
 };
+
+// Zero-dependency markdown parser helper
+const renderMarkdown = (text: string) => {
+  if (!text) return null;
+  const lines = text.split("\n");
+  const elements: React.ReactNode[] = [];
+  
+  lines.forEach((line, idx) => {
+    let cleanLine = line.trim();
+    if (!cleanLine) {
+      elements.push(<div key={`empty-${idx}`} className="h-2" />);
+      return;
+    }
+    
+    // Check for list item (e.g. "* item" or "- item")
+    const isListItem = cleanLine.startsWith("* ") || cleanLine.startsWith("- ");
+    if (isListItem) {
+      cleanLine = cleanLine.substring(2);
+    }
+    
+    // Replace **bold** with styled spans
+    const parts = cleanLine.split(/\*\*([^*]+)\*\*/g);
+    const parsedLine = parts.map((part, pIdx) => {
+      if (pIdx % 2 === 1) {
+        return (
+          <span key={pIdx} style={{ color: "var(--accent)", fontWeight: 600 }}>
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+    
+    if (isListItem) {
+      elements.push(
+        <li key={idx} style={{ marginBottom: "4px", fontSize: "12px", listStyleType: "disc", marginLeft: "14px" }} className="text-white">
+          {parsedLine}
+        </li>
+      );
+    } else {
+      elements.push(
+        <p key={idx} style={{ marginBottom: "8px", lineHeight: 1.6 }} className="text-white">
+          {parsedLine}
+        </p>
+      );
+    }
+  });
+  
+  return <div className="space-y-1">{elements}</div>;
+};
+
+// Contextual intelligent responses
+const CXO_RESPONSES = [
+  {
+    keywords: ['profit', 'drop', 'decline', 'fell', 'down'],
+    response: `Net profit of **₹1.2 Cr** (19.7% margin) is tracking **+3.1%** above last month despite a temporary revenue dip from Plant B's reduced output. The margin is holding because energy costs decreased 8% with the tariff rescheduling implemented last week. Primary risk to profit: if Furnace-2 fails unplanned, we absorb **₹18.6L** in emergency costs which would cut this month's net profit by approximately 67%.`
+  },
+  {
+    keywords: ['loss', 'losses', 'waste', 'breakdown'],
+    response: `MTD losses of **₹8.2L** break down as:
+- **Downtime (42%, ₹3.4L)** primarily from Plant B Furnace-2 micro-stoppages.
+- **Defects (30%, ₹2.5L)** from temperature variance in the Rolling Mill.
+- **Energy Waste (28%, ₹2.3L)** from peak-hour tariff overruns.
+The highest ROI intervention is the Furnace-2 bearing replacement — addressing that single machine eliminates an estimated 61% of the downtime category.`
+  },
+  {
+    keywords: ['forecast', 'next month', 'predict', 'june'],
+    response: `June revenue forecast: **₹7.8 Cr** (mid-case) with confidence interval **₹6.9-8.7 Cr**. This assumes Furnace-2 maintenance is completed before June 5. If the bearing fails unplanned, the pessimistic case of **₹6.2 Cr** becomes likely. The AI model is weighting Plant C's strong performance (91% OEE) to offset Plant B's drag on enterprise output.`
+  },
+  {
+    keywords: ['plant b', 'pune', 'underperform', 'worst'],
+    response: `Plant B (Pune) is the enterprise's primary underperformer: OEE **67%** vs target **82%**, contributing 38% of total energy spend at 12% lower efficiency than Plant A. The root cause is aging furnace infrastructure — BF-2 is the bottleneck asset with vibration anomaly at **4.2mm/s**. Once the bearing is replaced, Plant B's OEE is modeled to recover to 76-79% within 2 weeks, worth approximately **₹4.2L/month** in recovered output.`
+  },
+  {
+    keywords: ['energy', 'power', 'electricity', 'tariff'],
+    response: `Energy billing is at **₹45.2L** MTD (₹3.82/kWh average). The Situation Room flagged peak-hour billing as the top risk — 8 of the last 30 days breached the tariff threshold. Opportunity: rescheduling heavy arc furnace melting from 10AM-6PM to 10PM-6AM saves an estimated **₹1.8L/month** with no production impact. This action is already in the Actions Center as a MEDIUM priority recommendation.`
+  },
+  {
+    keywords: ['risk', 'biggest risk', 'concern', 'worry'],
+    response: `Highest operational risk: **Furnace-2 bearing failure** at Plant B. At current vibration trajectory, **68%** probability of seizure within 10 days. Financial exposure: **₹18.6L** in unplanned downtime + emergency repair costs. This is 155% of current month net profit. Second risk: DR Cloud Replica not synced in 54 hours (flagged by IT/OT team) — compliance exposure if audited. Recommend reviewing Actions Center for both items.`
+  }
+];
+
+const FLOOR_RESPONSES = [
+  {
+    keywords: ['target', 'hit', 'make it', 'shift'],
+    response: `Current pace of **29.1 T/hr** against required **47.8 T/hr** makes the 620T shift target unlikely without intervention. Projected completion at current pace: **~542T** (87.4% of target). Gap: approximately **78T**. Recovery options:
+- Line 1 overtime adds **~17T** in remaining 3.5 hrs.
+- Carry WO-3278 to next shift saves production time on current lines.
+The Line 3 jam is cleared — pace should improve in the next 30 minutes.`
+  },
+  {
+    keywords: ['bottleneck', 'slowdown', 'jam', 'line 3'],
+    response: `Line 3 experienced a slag jam that ran from approximately Hour 3 to Hour 4.5 of the shift (visible on the Gantt timeline). The jam is now cleared per SCADA telemetry. However, Furnace-2 is still running at degraded output (**18 T/hr** vs **32 T/hr** baseline) due to the bearing vibration issue. Furnace-2 is the current production bottleneck, not Line 3.`
+  },
+  {
+    keywords: ['team', 'reallocate', 'assign', 'prioritize', 'work orders'],
+    response: `Recommended team reallocation for this shift:
+- Move Team C from Billets WO-3278 (lower urgency, can defer) to support Line 1 throughput — this adds approximately **5 T/hr**.
+- Authorize overtime for Line 1 operator crew for the remaining 3.5 hours.
+- Pre-position Maintenance Crew Alpha near Furnace-2 — if vibration reaches 4.5mm/s, immediate intervention is needed. Do not assign new work to Furnace-2 crew until maintenance is confirmed.`
+  },
+  {
+    keywords: ['shipment', 'iron ore', 'delay', 'material'],
+    response: `Iron Ore inbound shipment (**240T**, carrier: CONCOR) is delayed by 2.5 hours — new ETA **2:30 PM**. Current Iron Ore inventory: **3,150T** against 3,000T minimum. You have approximately 6 hours of runway at current consumption rate. The delay is within safe margins for this shift but risks the evening shift if a second delay occurs. Recommend triggering the expedite request to CONCOR dispatch now.`
+  }
+];
+
+const ITOT_RESPONSES = [
+  {
+    keywords: ['historian', 'p1', 'sync', 'database'],
+    response: `Historian DB P1 (raised 2 hours ago): disk utilization at **78%** triggered a sync queue timeout. Effect: **8-second pipeline lag** on Plant B SCADA → Historian path, 6% sensor data gap this hour. The 6:00 AM backup job also failed as a cascade. Data is NOT lost — buffering in SCADA queue. Fix: archive partitions older than 90 days (~140GB estimated freed). ETA to resolve: 2-3 hours with DevOps Team. AI models on Plant B data should be treated as stale until resolved.`
+  },
+  {
+    keywords: ['backup', 'dr', 'disaster', 'recovery'],
+    response: `Backup status as of now: ERP Database and SCADA Configurations are current and meeting RPO targets. Historian Data Log is in WARNING (backup failed at 6:00 AM due to P1). DR Cloud Replica has not synced in **54 hours** — RPO target is 12 hours — this is an active compliance breach. If audited today, this would be a finding. Recommend manual sync trigger immediately and creating a P2 incident for the DR gap. The AD Directory State snapshot is current as of yesterday 11:30 PM.`
+  },
+  {
+    keywords: ['plc', 'latency', 'network', 'bandwidth'],
+    response: `PLC Network is showing **120ms ping** (baseline 14ms for SCADA Core) — an 8x increase that correlates with the OT Bus Latency spike visible in the 48-hour chart (30h-36h breach). The PLC Subnets segment is at 1.4 Mbps bandwidth — significantly lower than Corporate IT at 420 Mbps. Possible causes:
+- Broadcast storm on the OT backbone.
+- Unauthorized polling from the unknown IP detected in Zone 3.
+Recommend isolating PLC Subnet and capturing traffic sample before the IDS alert is cleared.`
+  }
+];
+
+function matchResponse(input: string, context: string): string {
+  const lower = input.toLowerCase();
+  const rules = context === 'cxo' ? CXO_RESPONSES : 
+                context === 'floor' ? FLOOR_RESPONSES : ITOT_RESPONSES;
+  
+  for (const rule of rules) {
+    if (rule.keywords.some(kw => lower.includes(kw))) {
+      return rule.response;
+    }
+  }
+  
+  return `I'm analyzing the latest ${context === 'cxo' ? 'enterprise' : context === 'floor' ? 'shift' : 'IT/OT'} data. Based on current telemetry, no specific anomaly matches your query. Please try asking about specific metrics: revenue, losses, equipment, shipments, network status, or active incidents.`;
+}
 
 export default function AICopilot() {
   const {
@@ -251,6 +390,24 @@ export default function AICopilot() {
   };
 
   const getQuickQuestions = () => {
+    if (selectedRole === "technical") {
+      return [
+        "What caused the Historian P1 incident?",
+        "Is Plant B's data reliable for AI?",
+        "Show backup compliance status",
+        "Investigate PLC latency spike",
+        "Show open P1 & P2 incidents"
+      ];
+    }
+    if (selectedRole === "floor") {
+      return [
+        "Why is production lagging?",
+        "Furnace-2 speed constraint",
+        "Iron ore shipment status",
+        "Line 3 jam details",
+        "Reassign shift team"
+      ];
+    }
     return [
       "Why did profit drop?",
       "Show biggest losses",
@@ -275,6 +432,23 @@ export default function AICopilot() {
     };
     setMessages(prev => [...prev, userMsg]);
     setIsGenerating(true);
+
+    // Look for client-side keyword matches first to provide instant, high-quality answers
+    const matchedReply = matchResponse(text, selectedRole);
+    const genericResponsePrefix = "I'm analyzing the latest";
+    const hasMatch = !matchedReply.startsWith(genericResponsePrefix);
+
+    if (hasMatch) {
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          id: Math.random().toString(36).substring(2, 11),
+          role: "assistant",
+          content: matchedReply
+        }]);
+        setIsGenerating(false);
+      }, 800);
+      return;
+    }
 
     try {
       const res = await fetch("/api/chat/messages", {
@@ -326,26 +500,12 @@ export default function AICopilot() {
     } catch {
       // Mock AI response fallback
       setTimeout(() => {
-        let reply = "Furnace-2 bearing temperature has increased by 22% over 48 hours. Current: 92°C vs baseline 75°C. Bearing thermal wear projected in 2 days at 68%. Impact: ₹18.6 Lakhs. Recommended: inspect bearing and approve automatic preventative replacement by May 23, 2026.";
-        if (text.toLowerCase().includes("energy") || text.toLowerCase().includes("utility") || text.toLowerCase().includes("tariff")) {
-          reply = "Pune energy intensity 520 kWh/ton vs 480 kWh/ton. 8.3% excess costs ₹1.8 Lakhs/day. Driver: thermal processes running during peak grid tariffs. Opportunity: Shift peak thermal furnace cycles to off-peak slots saves ₹54.0 Lakhs/month.";
-        } else if (
-          text.toLowerCase().includes("profit") ||
-          text.toLowerCase().includes("loss") ||
-          text.toLowerCase().includes("why did profit drop") ||
-          text.toLowerCase().includes("shortfall") ||
-          text.toLowerCase().includes("production") ||
-          text.toLowerCase().includes("shift") ||
-          text.toLowerCase().includes("pace")
-        ) {
-          reply = "Current shift 56.2% complete with 387T vs 620T. Pace 29.1 T/hr is 39.1% below required 47.8 T/hr. Primary cause: slag chute restriction on Line 3. Shortfall: 233T. Options: Clear Line 3 slag chute jam or Reassign Team A to HRC Coils.";
-        }
         setMessages(prev => [...prev, {
           id: Math.random().toString(36).substring(2, 11),
           role: "assistant",
-          content: reply
+          content: matchedReply
         }]);
-      }, 1000);
+      }, 800);
     } finally {
       setIsGenerating(false);
     }
@@ -470,75 +630,65 @@ export default function AICopilot() {
                 )}
               </AnimatePresence>
 
-              {/* TABS BODY */}
               {copilotTab === "overview" && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="space-y-4"
                 >
-                  {/* Overview Stats Dashboard */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-[var(--bg-elevated)] p-3.5 border border-[var(--border)] rounded flex flex-col justify-between">
-                      <span className="text-[9px] font-mono font-bold uppercase text-[var(--text-secondary)]">Operational Risk</span>
-                      <span className="text-xl font-light font-mono text-[var(--status-red)] mt-1.5">68%</span>
+                  {/* AI Summary Card */}
+                  <div className="bg-[var(--bg-surface)] p-4 border border-[var(--border-accent)] rounded-md space-y-2 relative overflow-hidden" style={{ borderColor: "rgba(245,158,11,0.2)", boxShadow: "0 0 10px rgba(245,158,11,0.03)" }}>
+                    <div className="absolute top-0 left-0 w-[3px] h-full bg-[var(--accent)]" />
+                    <span className="text-[10px] font-bold text-[var(--accent)] uppercase tracking-wider font-mono block">
+                      AI Summary Profile
+                    </span>
+                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed font-sans">
+                      {selectedRole === "technical" ? (
+                        "IT/OT networks are online with uptime at 99.82%, but Historian DB sync is experiencing P1 timeouts. Pune Furnace-2 telemetries show anomalous 4.2mm/s vibration and high core thermal profiles requiring maintenance. Cloud backup replication has breached RPO targets by 54 hours, exposing compliance risks."
+                      ) : selectedRole === "floor" ? (
+                        "Current shift operations stand at 84% completion. The Line 3 slag jam was successfully resolved by operators, though Pune Furnace-2 speed limitations still constrain overall output pace. Incoming iron ore feedstock carrier is delayed, with approximately 6 hours of inventory safety runway remaining."
+                      ) : (
+                        "MTD revenue is tracking at ₹12.5 Cr against the ₹7.2 Cr target, yielding ₹2.4 Cr profit (19.2% margin). Plant B Furnace-2 bearing fatigue remains the primary risk to forecast stability, holding a potential ₹18.6L downtime exposure. Tariff optimal energy rescheduling represents a ₹54L/month savings opportunity."
+                      )}
+                    </p>
+                  </div>
+
+                  {/* 3 Metric Snapshot Cards */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-[var(--bg-elevated)] p-2.5 border border-[var(--border)] rounded flex flex-col justify-between">
+                      <span className="text-[8px] font-mono font-bold uppercase text-[var(--text-muted)]">Risk Index</span>
+                      <span className="text-sm font-mono text-[var(--status-red)] mt-1 font-bold">
+                        {selectedRole === "technical" ? "51%" : "68%"}
+                      </span>
                     </div>
-                    <div className="bg-[var(--bg-elevated)] p-3.5 border border-[var(--border)] rounded flex flex-col justify-between" style={{ borderColor: "var(--border-accent)", boxShadow: "0 0 8px var(--accent-glow)" }}>
-                      <span className="text-[9px] font-mono font-bold uppercase text-[var(--accent)]">Savings Opp.</span>
-                      <span className="text-xl font-light font-mono text-white mt-1.5">₹18.6L</span>
+                    <div className="bg-[var(--bg-elevated)] p-2.5 border border-[var(--border)] rounded flex flex-col justify-between">
+                      <span className="text-[8px] font-mono font-bold uppercase text-[var(--text-muted)]">Savings Opp.</span>
+                      <span className="text-sm font-mono text-[var(--status-green)] mt-1 font-bold">
+                        {selectedRole === "technical" ? "₹7.1L" : "₹18.6L"}
+                      </span>
+                    </div>
+                    <div className="bg-[var(--bg-elevated)] p-2.5 border border-[var(--border)] rounded flex flex-col justify-between">
+                      <span className="text-[8px] font-mono font-bold uppercase text-[var(--text-muted)]">OEE Health</span>
+                      <span className="text-sm font-mono text-[var(--accent)] mt-1 font-bold">
+                        {selectedRole === "technical" ? "68%" : "84%"}
+                      </span>
                     </div>
                   </div>
 
                   {/* Alerts */}
-                  <div className="space-y-2.5">
+                  <div className="space-y-2">
                     <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider font-mono block">
-                      Active Alerts (Top 3)
+                      Active Operational Alerts
                     </span>
-                    {getStaticAlerts().map((alert) => {
-                      const isCritical = alert.severity === "critical";
-                      const isHigh = alert.severity === "high";
-                      const colorClass = isCritical 
-                        ? "border-l-[3px] border-l-[var(--status-red)] bg-red-500/4" 
-                        : isHigh 
-                        ? "border-l-[3px] border-l-[var(--status-amber)] bg-amber-500/4" 
-                        : "border-l-[3px] border-l-[var(--status-blue)] bg-blue-500/4";
-                      
-                      const label = isCritical ? "🔴 Critical" : isHigh ? "🟠 High" : "🟡 Medium";
-
-                      return (
-                        <div key={alert.id} className={cn("p-3 rounded border border-[var(--border)] flex flex-col justify-between gap-1.5", colorClass)}>
-                          <div className="flex justify-between items-center">
-                            <span className="text-[9px] font-mono font-bold uppercase">{label}</span>
-                            <span className="text-[9px] font-mono text-[var(--text-muted)]">Locked</span>
-                          </div>
-                          <h4 className="text-xs font-bold text-white leading-tight">{alert.title}</h4>
-                          <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed mt-0.5">{alert.body}</p>
-                          <div className="flex justify-end pt-1">
-                            <button
-                              onClick={() => handleSendMessage(alert.query)}
-                              className="px-2 py-0.5 text-[9px] font-mono border border-[var(--border-strong)] hover:border-[var(--accent)] hover:text-[var(--accent)] rounded bg-[var(--bg-surface)] cursor-pointer"
-                            >
-                              [{alert.actionText}]
-                            </button>
-                          </div>
+                    {getStaticAlerts().slice(0, 2).map((alert) => (
+                      <div key={alert.id} className="p-3 rounded border border-[var(--border)] border-l-[3px] border-l-[var(--status-amber)] bg-amber-500/2 flex flex-col gap-1">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[9px] font-mono font-bold text-[var(--status-amber)] uppercase">⚠️ ALERT</span>
                         </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Summary Bullets */}
-                  <div className="bg-[var(--bg-surface)] p-4 border border-[var(--border)] rounded-md space-y-2.5">
-                    <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider font-mono block border-b border-[var(--border)] pb-1.5">
-                      Today's Executive Summary
-                    </span>
-                    <ul className="space-y-2 text-xs text-[var(--text-secondary)] leading-relaxed">
-                      {getSummaryBullets().map((bullet, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="text-[var(--accent)] font-mono mt-0.5">•</span>
-                          <span>{bullet}</span>
-                        </li>
-                      ))}
-                    </ul>
+                        <h4 className="text-xs font-bold text-white leading-tight">{alert.title}</h4>
+                        <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed">{alert.body.substring(0, 100)}...</p>
+                      </div>
+                    ))}
                   </div>
                 </motion.div>
               )}
@@ -547,85 +697,57 @@ export default function AICopilot() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="space-y-4 text-xs"
+                  className="space-y-3"
                 >
-                  {/* Root Cause Analysis */}
-                  <div className="bg-[var(--bg-surface)] p-4 border border-[var(--border)] rounded-md space-y-2.5">
-                    <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider font-mono block border-b border-[var(--border)] pb-1.5">
-                      Root Cause Analysis (RCA)
-                    </span>
-                    <div className="space-y-2">
-                      <div>
-                        <p className="font-semibold text-white">Top Downtime Driver:</p>
-                        <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">Furnace-2 bearing friction (72% downtime correlation).</p>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-white">Top Isolated Anomalies:</p>
-                        <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">Thermal spikes on Electric Arc Furnace line (+8.4% above limit).</p>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-white">Failing Sensors Prognostics:</p>
-                        <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">T-42 vibration sensor reporting high noise signal (94% failure risk).</p>
-                      </div>
-                    </div>
-                  </div>
+                  <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider font-mono block">
+                    Telemetry Recommendations
+                  </span>
 
-                  {/* Trend Analysis */}
-                  <div className="bg-[var(--bg-surface)] p-4 border border-[var(--border)] rounded-md space-y-2.5">
-                    <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider font-mono block border-b border-[var(--border)] pb-1.5">
-                      OEE & Output Trends
-                    </span>
-                    <div className="space-y-1.5 leading-relaxed text-[var(--text-secondary)]">
-                      <p className="flex justify-between">
-                        <span>Rolling Mill Line OEE:</span>
-                        <span className="text-[var(--status-red)] font-mono font-bold">▼ -5.3% (weekly)</span>
-                      </p>
-                      <p className="flex justify-between">
-                        <span>Slag Quality Yield:</span>
-                        <span className="text-[var(--status-green)] font-mono font-bold">▲ +4.2% (weekly)</span>
-                      </p>
-                      <p className="flex justify-between">
-                        <span>Finishing Line Availability:</span>
-                        <span className="text-white font-mono">90.2% (Target Alignment)</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Forecasts */}
-                  <div className="bg-[var(--bg-surface)] p-4 border border-[var(--border)] rounded-md space-y-2.5">
-                    <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider font-mono block border-b border-[var(--border)] pb-1.5">
-                      Failure & Financial Forecasts
-                    </span>
-                    <div className="space-y-2 text-[var(--text-secondary)]">
-                      <p>
-                        <strong className="text-white">Refractory wear limit warning:</strong> Blast Furnace lining requires replacement inside 42 days. Estimating repair outage impact at ₹65.0L.
-                      </p>
-                      <p>
-                        <strong className="text-white">MTD Revenue Outlook:</strong> Projecting ₹448.2 Cr by calendar end. Deviation within nominal bounds (-1.7%).
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Plant Comparisons */}
-                  <div className="bg-[var(--bg-surface)] p-4 border border-[var(--border)] rounded-md space-y-2.5">
-                    <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider font-mono block border-b border-[var(--border)] pb-1.5">
-                      Inter-Plant OEE Comparison
-                    </span>
-                    <div className="space-y-2 text-[11px]">
+                  {[
+                    {
+                      id: "rec-f2",
+                      severity: "CRITICAL",
+                      color: "text-red-400 bg-red-500/10 border-red-500/20",
+                      title: "Replace Furnace-2 Bearing Housing",
+                      desc: "Vibration is anomalous at 4.2mm/s (limit: 3.0). Replacement prevents ₹18.6L catastrophic spindle failure.",
+                      actionText: "Investigate bearing anomaly",
+                      query: "Provide diagnostics on Pune Furnace-2 spindle bearing friction."
+                    },
+                    {
+                      id: "rec-energy",
+                      severity: "HIGH PRIORITY",
+                      color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+                      title: "Reschedule Peak Electric Arc Melting",
+                      desc: "Move billet heating to off-peak slots (10:00 PM - 6:00 AM) to save ₹1.8L/day in peak utility surcharges.",
+                      actionText: "Optimize energy tariffs",
+                      query: "Optimize energy consumption for electric arc furnace."
+                    },
+                    {
+                      id: "rec-dr",
+                      severity: "HIGH PRIORITY",
+                      color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+                      title: "Resolve DR Cloud Replica Sync Lag",
+                      desc: "Database replica has been offline for 54 hours. Investigate OT network boundary routing failures.",
+                      actionText: "Verify cloud backups",
+                      query: "Analyze DR Cloud Replica backup replication failure."
+                    }
+                  ].map((rec) => (
+                    <div key={rec.id} className="bg-[var(--bg-surface)] p-3 border border-[var(--border)] rounded-md space-y-2 hover:border-[var(--border-strong)] transition-all">
                       <div className="flex justify-between items-center">
-                        <span className="text-white">Plant B (Pune):</span>
-                        <span className="text-[var(--status-amber)] font-mono">81.5% (Underperforming)</span>
+                        <span className={cn("text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border", rec.color)}>
+                          {rec.severity}
+                        </span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-white">Plant A (Mumbai):</span>
-                        <span className="text-[var(--status-green)] font-mono">88.2% (Optimal Baseline)</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-white">Plant C (Surat):</span>
-                        <span className="text-[var(--text-secondary)] font-mono">84.1% (Nominal Target)</span>
-                      </div>
+                      <h4 className="text-xs font-bold text-white leading-tight">{rec.title}</h4>
+                      <p className="text-[10.5px] text-[var(--text-secondary)] leading-relaxed">{rec.desc}</p>
+                      <button
+                        onClick={() => handleSendMessage(rec.query)}
+                        className="w-full mt-1 py-1 text-center text-[10px] font-semibold bg-[var(--bg-hover)] hover:bg-[var(--border-strong)] text-[var(--text-secondary)] hover:text-white border border-[var(--border)] rounded transition-all cursor-pointer font-mono"
+                      >
+                        [{rec.actionText}]
+                      </button>
                     </div>
-                  </div>
+                  ))}
                 </motion.div>
               )}
 
@@ -636,12 +758,10 @@ export default function AICopilot() {
                   className="space-y-3"
                 >
                   <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider font-mono block">
-                    Prioritized AI Action Items
+                    Pending Actions Center Registry
                   </span>
 
                   {getActions().map((act) => {
-                    const actionKey = `drawer-${act.id}`;
-                    const currentStatus = actionStates[actionKey] || "pending";
                     const isCritical = act.priority === "CRITICAL";
                     const isHigh = act.priority.includes("HIGH");
                     const badgeClass = isCritical 
@@ -651,44 +771,27 @@ export default function AICopilot() {
                       : "text-blue-400 bg-blue-500/10 border-blue-500/20";
 
                     return (
-                      <div key={act.id} className="bg-[var(--bg-surface)] p-3 border border-[var(--border)] rounded-md space-y-2.5 hover:border-[var(--border-strong)] transition-all">
-                        <div className="flex justify-between items-center">
-                          <span className={cn("text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border", badgeClass)}>
-                            {act.priority}
-                          </span>
-                          <span className="text-[9px] font-mono text-[var(--text-secondary)] font-semibold text-[var(--status-green)]">
-                            {act.impact}
-                          </span>
+                      <div key={act.id} className="bg-[var(--bg-surface)] p-3 border border-[var(--border)] rounded-md flex items-center justify-between gap-2.5">
+                        <div className="space-y-0.5 min-w-0">
+                          <h4 className="text-xs font-bold text-white leading-tight truncate">{act.action}</h4>
+                          <span className="text-[9px] font-mono text-[var(--text-muted)]">Owner: {act.owner}</span>
                         </div>
-                        <h4 className="text-xs font-bold text-white leading-tight">{act.action}</h4>
-                        <p className="text-[10px] font-mono text-[var(--text-muted)]">Owner: {act.owner}</p>
-
-                        <div className="flex gap-2 pt-1">
-                          {currentStatus === "pending" ? (
-                            <>
-                              <button
-                                onClick={() => handleActionClick(actionKey, "approved", act.action)}
-                                className="flex-1 py-1 text-center text-xs font-semibold bg-[var(--accent)] hover:brightness-115 text-black rounded transition-all cursor-pointer border-none"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleActionClick(actionKey, "assigned", act.action)}
-                                className="flex-1 py-1 text-center text-xs font-semibold bg-[var(--bg-hover)] hover:bg-[var(--border-strong)] text-[var(--text-secondary)] hover:text-white border border-[var(--border)] rounded transition-all cursor-pointer"
-                              >
-                                Assign
-                              </button>
-                            </>
-                          ) : (
-                            <div className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[var(--status-green)] text-[10px] font-bold font-mono">
-                              <Check className="w-3.5 h-3.5" />
-                              <span>DECISION {currentStatus.toUpperCase()}</span>
-                            </div>
-                          )}
-                        </div>
+                        <span className={cn("text-[8px] font-mono font-bold px-1.5 py-0.5 rounded border flex-shrink-0", badgeClass)}>
+                          {act.priority.split(" ")[0]}
+                        </span>
                       </div>
                     );
                   })}
+
+                  <div className="pt-2">
+                    <button
+                      onClick={() => window.location.href = "/actions"}
+                      className="w-full py-2 bg-[var(--accent)] hover:brightness-110 text-black font-semibold text-[11px] uppercase tracking-wider rounded transition-all cursor-pointer border-none flex items-center justify-center gap-1.5 font-mono"
+                    >
+                      <span>Go to Actions Center</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </motion.div>
               )}
 
@@ -723,7 +826,7 @@ export default function AICopilot() {
                             borderLeftColor: msg.role === "assistant" ? "var(--accent)" : "var(--border)",
                           }}
                         >
-                          <p className="whitespace-pre-line text-xs font-sans text-white">{msg.content}</p>
+                          <div className="whitespace-pre-line text-xs font-sans text-white">{renderMarkdown(msg.content)}</div>
                         </div>
                       </div>
                     ))}

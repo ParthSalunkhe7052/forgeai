@@ -195,139 +195,236 @@ export function DetailSheet({ isOpen, title, onClose, detailData }: DetailSheetP
 
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto p-5 space-y-6">
-            {/* Main value indicator */}
-            <div className="bg-[#14151B] border border-[var(--border)] rounded-lg p-4 flex items-baseline justify-between">
-              <div>
-                <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Current Value</span>
-                <span className="text-3xl font-light text-white block mt-1">
-                  {currentVal.toFixed(1)}{unit}
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block">Status</span>
-                <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[var(--status-green)] font-bold inline-block mt-2">
-                  STABLE
-                </span>
-              </div>
-            </div>
+            {title.toLowerCase().includes("furnace-2") || title.toLowerCase().includes("furnace 2") ? (
+              <div className="space-y-6">
+                {/* Critical Stats */}
+                <div className="space-y-2.5">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold">Current Machine Status</span>
+                  <div className="border border-[var(--border)] rounded-lg p-4 bg-[#14151B] space-y-3">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-[var(--text-secondary)]">Health Score</span>
+                      <span className="text-[var(--status-amber)] font-bold">68% — Degraded</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-[var(--text-secondary)]">Vibration</span>
+                      <span className="text-[var(--status-red)] font-bold">4.2 mm/s (baseline: 2.1)</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-[var(--text-secondary)]">Temperature</span>
+                      <span className="text-[var(--status-amber)] font-bold">94°C (limit: 100°C)</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-[var(--text-secondary)]">Failure Risk</span>
+                      <span className="text-[var(--status-red)] font-bold">68% within 10 days</span>
+                    </div>
+                  </div>
+                </div>
 
-            {/* 30-Day Trend Chart */}
-            <div className="space-y-2">
-              <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold">Performance Trend</span>
-              <div className="h-[220px] w-full border border-[var(--border)] rounded-lg p-3 bg-[#101116]/50">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_STYLE.gridColor} vertical={false} />
-                    <XAxis
-                      dataKey="day"
-                      tick={{ fill: CHART_STYLE.axisColor, fontSize: 10 }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      domain={[
-                        Math.max(0, Math.floor(minVal * 0.9)),
-                        Math.min(100, Math.ceil(maxVal * 1.1)),
-                      ]}
-                      tick={{ fill: CHART_STYLE.axisColor, fontSize: 10 }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#14151C",
-                        borderColor: "var(--border-strong)",
-                        borderRadius: 6,
-                        fontSize: 11,
-                        color: "white",
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      stroke={CHART_COLORS_HEX.c1}
-                      strokeWidth={2}
-                      dot={{ r: 3, stroke: CHART_COLORS_HEX.c1, strokeWidth: 1, fill: "#0E0F14" }}
-                      activeDot={{ r: 5 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+                {/* Vibration Trend Chart */}
+                <div className="space-y-2">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold">VIBRATION TREND — 14 DAYS</span>
+                  <div className="h-[200px] w-full border border-[var(--border)] rounded-lg p-3 bg-[#101116]/50">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={[
+                          { day: "D1", value: 2.1 },
+                          { day: "D2", value: 2.2 },
+                          { day: "D3", value: 2.2 },
+                          { day: "D4", value: 2.4 },
+                          { day: "D5", value: 2.5 },
+                          { day: "D6", value: 2.7 },
+                          { day: "D7", value: 2.9 },
+                          { day: "D8", value: 3.0 },
+                          { day: "D9", value: 3.2 },
+                          { day: "D10", value: 3.5 },
+                          { day: "D11", value: 3.7 },
+                          { day: "D12", value: 3.8 },
+                          { day: "D13", value: 4.0 },
+                          { day: "D14", value: 4.2 }
+                        ]}
+                        margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STYLE.gridColor} vertical={false} />
+                        <XAxis dataKey="day" tick={{ fill: CHART_STYLE.axisColor, fontSize: 9 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: CHART_STYLE.axisColor, fontSize: 9 }} axisLine={false} tickLine={false} />
+                        <Tooltip cursor={false} contentStyle={{ backgroundColor: "#14151C", borderColor: "var(--border-strong)", borderRadius: 6, fontSize: 10 }} />
+                        <Line type="monotone" dataKey="value" stroke="var(--status-red)" strokeWidth={2} dot={{ r: 2 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
 
-            {/* Summary Stats Table */}
-            <div className="space-y-2">
-              <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold">Historical Statistics</span>
-              <div className="border border-[var(--border)] rounded-lg overflow-hidden">
-                <table className="w-full text-xs text-left border-collapse">
-                  <tbody>
-                    <tr className="border-b border-[var(--border)] bg-[#101116]/30">
-                      <td className="p-3 text-[var(--text-secondary)]">Maximum Reading</td>
-                      <td className="p-3 text-white text-right font-bold">{maxVal.toFixed(1)}{unit}</td>
-                    </tr>
-                    <tr className="border-b border-[var(--border)]">
-                      <td className="p-3 text-[var(--text-secondary)]">Minimum Reading</td>
-                      <td className="p-3 text-white text-right font-bold">{minVal.toFixed(1)}{unit}</td>
-                    </tr>
-                    <tr className="border-b border-[var(--border)] bg-[#101116]/30">
-                      <td className="p-3 text-[var(--text-secondary)]">Historical Average</td>
-                      <td className="p-3 text-white text-right font-bold">{avgVal.toFixed(1)}{unit}</td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 text-[var(--text-secondary)]">Current Deviation</td>
-                      <td className="p-3 text-[var(--status-green)] text-right font-bold">
-                        {((currentVal - avgVal) / (avgVal || 1) * 100).toFixed(1)}%
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                {/* AI Note Banner */}
+                <div className="border border-[var(--accent)]/20 bg-[var(--accent)]/5 rounded-lg p-4 space-y-2">
+                  <div className="flex items-center gap-1 text-[var(--accent)] text-[10px] font-bold tracking-wider uppercase">
+                    <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                    <span>AI Diagnostics</span>
+                  </div>
+                  <p className="text-[11.5px] leading-relaxed text-[var(--text-secondary)]">
+                    Bearing wear pattern consistent with thermal fatigue. Vibration signature matches **72%** of historical bearing seizure events in the dataset. Estimated cost if unplanned failure: **₹18.6L**. Cost of preventive replacement: **₹2.1L**.
+                  </p>
+                </div>
 
-            {/* AI Note Banner */}
-            <div className="border border-[var(--accent)]/20 bg-[var(--accent)]/5 rounded-lg p-4 space-y-2">
-              <div className="flex items-center gap-1 text-[var(--accent)] text-[10px] font-bold tracking-wider uppercase">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>AI Co-Pilot Diagnosis</span>
+                {/* CTA Buttons */}
+                <div className="pt-2 border-t border-[var(--border)] space-y-2">
+                  <button
+                    onClick={() => {
+                      onClose();
+                      window.location.href = "/actions";
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 rounded bg-[var(--accent)] hover:brightness-110 text-black py-2.5 text-xs font-bold transition-all border-none cursor-pointer font-mono"
+                  >
+                    <span>Add to Actions Center</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      alert("Downloading diagnostic report for Pune Furnace-2...");
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 rounded border border-[var(--border-strong)] hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-white py-2.5 text-xs font-bold transition-all cursor-pointer font-mono bg-transparent"
+                  >
+                    <span>Download Diagnostic Report</span>
+                  </button>
+                </div>
               </div>
-              <p className="text-[11px] leading-relaxed text-[var(--text-secondary)] italic">
-                &ldquo;{note}&rdquo;
-              </p>
-            </div>
-
-            {/* Risk Assessment metrics if provided */}
-            {(detailData?.financialImpact || detailData?.daysUntilFailure !== undefined) && (
-              <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-4 grid grid-cols-2 gap-4">
-                {detailData.financialImpact && (
+            ) : (
+              <>
+                {/* Main value indicator */}
+                <div className="bg-[#14151B] border border-[var(--border)] rounded-lg p-4 flex items-baseline justify-between">
                   <div>
-                    <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block">Est. Financial Impact</span>
-                    <span className="text-xs font-bold text-white block mt-1 text-[var(--status-red)]">
-                      {detailData.financialImpact}
+                    <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Current Value</span>
+                    <span className="text-3xl font-light text-white block mt-1">
+                      {currentVal.toFixed(1)}{unit}
                     </span>
                   </div>
-                )}
-                {detailData.daysUntilFailure !== undefined && (
-                  <div>
-                    <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block">Days Until Failure</span>
-                    <span className="text-xs font-bold text-white block mt-1 text-[var(--status-amber)]">
-                      {detailData.daysUntilFailure} Days
+                  <div className="text-right">
+                    <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block">Status</span>
+                    <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[var(--status-green)] font-bold inline-block mt-2">
+                      STABLE
                     </span>
                   </div>
-                )}
-              </div>
-            )}
+                </div>
 
-            {/* Action Button inside Sheet */}
-            {detailData?.showActionsButton && detailData.onActionButtonClick && (
-              <div className="pt-2 border-t border-[var(--border)]">
-                <button
-                  onClick={detailData.onActionButtonClick}
-                  className="w-full flex items-center justify-center gap-1.5 rounded bg-[var(--accent)] hover:brightness-110 text-black py-2.5 text-xs font-bold transition-all border-none cursor-pointer font-mono"
-                >
-                  <span>Add to Actions Center</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
+                {/* 30-Day Trend Chart */}
+                <div className="space-y-2">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold">Performance Trend</span>
+                  <div className="h-[220px] w-full border border-[var(--border)] rounded-lg p-3 bg-[#101116]/50">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STYLE.gridColor} vertical={false} />
+                        <XAxis
+                          dataKey="day"
+                          tick={{ fill: CHART_STYLE.axisColor, fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          domain={[
+                            Math.max(0, Math.floor(minVal * 0.9)),
+                            Math.min(100, Math.ceil(maxVal * 1.1)),
+                          ]}
+                          tick={{ fill: CHART_STYLE.axisColor, fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip
+                          cursor={false}
+                          contentStyle={{
+                            backgroundColor: "#14151C",
+                            borderColor: "var(--border-strong)",
+                            borderRadius: 6,
+                            fontSize: 11,
+                            color: "white",
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke={CHART_COLORS_HEX.c1}
+                          strokeWidth={2}
+                          dot={{ r: 3, stroke: CHART_COLORS_HEX.c1, strokeWidth: 1, fill: "#0E0F14" }}
+                          activeDot={{ r: 5 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Summary Stats Table */}
+                <div className="space-y-2">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold">Historical Statistics</span>
+                  <div className="border border-[var(--border)] rounded-lg overflow-hidden">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <tbody>
+                        <tr className="border-b border-[var(--border)] bg-[#101116]/30">
+                          <td className="p-3 text-[var(--text-secondary)]">Maximum Reading</td>
+                          <td className="p-3 text-white text-right font-bold">{maxVal.toFixed(1)}{unit}</td>
+                        </tr>
+                        <tr className="border-b border-[var(--border)]">
+                          <td className="p-3 text-[var(--text-secondary)]">Minimum Reading</td>
+                          <td className="p-3 text-white text-right font-bold">{minVal.toFixed(1)}{unit}</td>
+                        </tr>
+                        <tr className="border-b border-[var(--border)] bg-[#101116]/30">
+                          <td className="p-3 text-[var(--text-secondary)]">Historical Average</td>
+                          <td className="p-3 text-white text-right font-bold">{avgVal.toFixed(1)}{unit}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 text-[var(--text-secondary)]">Current Deviation</td>
+                          <td className="p-3 text-[var(--status-green)] text-right font-bold">
+                            {((currentVal - avgVal) / (avgVal || 1) * 100).toFixed(1)}%
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* AI Note Banner */}
+                <div className="border border-[var(--accent)]/20 bg-[var(--accent)]/5 rounded-lg p-4 space-y-2">
+                  <div className="flex items-center gap-1 text-[var(--accent)] text-[10px] font-bold tracking-wider uppercase">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>AI Co-Pilot Diagnosis</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-[var(--text-secondary)] italic">
+                    &ldquo;{note}&rdquo;
+                  </p>
+                </div>
+
+                {/* Risk Assessment metrics if provided */}
+                {(detailData?.financialImpact || detailData?.daysUntilFailure !== undefined) && (
+                  <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-4 grid grid-cols-2 gap-4">
+                    {detailData.financialImpact && (
+                      <div>
+                        <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block">Est. Financial Impact</span>
+                        <span className="text-xs font-bold text-white block mt-1 text-[var(--status-red)]">
+                          {detailData.financialImpact}
+                        </span>
+                      </div>
+                    )}
+                    {detailData.daysUntilFailure !== undefined && (
+                      <div>
+                        <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block">Days Until Failure</span>
+                        <span className="text-xs font-bold text-white block mt-1 text-[var(--status-amber)]">
+                          {detailData.daysUntilFailure} Days
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Action Button inside Sheet */}
+                {detailData?.showActionsButton && detailData.onActionButtonClick && (
+                  <div className="pt-2 border-t border-[var(--border)]">
+                    <button
+                      onClick={detailData.onActionButtonClick}
+                      className="w-full flex items-center justify-center gap-1.5 rounded bg-[var(--accent)] hover:brightness-110 text-black py-2.5 text-xs font-bold transition-all border-none cursor-pointer font-mono"
+                    >
+                      <span>Add to Actions Center</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </motion.div>

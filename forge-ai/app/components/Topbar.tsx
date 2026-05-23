@@ -261,7 +261,9 @@ export default function Topbar() {
             style={{
               width: 6,
               height: 6,
-              background: isConnected
+              background: selectedRole === "reports"
+                ? "var(--status-green)"
+                : isConnected
                 ? "var(--status-blue)"
                 : selectedRole === "technical"
                 ? "var(--status-amber)"
@@ -272,10 +274,20 @@ export default function Topbar() {
             style={{
               fontFamily: "'DM Mono', monospace",
               fontSize: 11,
-              color: selectedRole === "technical" ? "var(--status-amber)" : "var(--text-muted)",
+              color: selectedRole === "reports"
+                ? "var(--status-green)"
+                : selectedRole === "technical"
+                ? "var(--status-amber)"
+                : "var(--text-muted)",
             }}
           >
-            {isConnected ? "LIVE" : selectedRole === "technical" ? "MOCK DATA" : "OFFLINE"}
+            {selectedRole === "reports"
+              ? "REPORT ENGINE"
+              : isConnected
+              ? "LIVE"
+              : selectedRole === "technical"
+              ? "MOCK DATA"
+              : "OFFLINE"}
           </span>
         </div>
 

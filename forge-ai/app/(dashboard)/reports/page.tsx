@@ -306,7 +306,7 @@ const MOCK_SUMMARIES: Record<string, AISummary> = {
 };
 
 export default function ReportsHub() {
-  const { selectedPlantId } = useDashboardStore();
+  const selectedPlantId = useDashboardStore((state) => state.selectedPlantId);
   const queryClient = useQueryClient();
   const [activeReportId, setActiveReportId] = useState<string>("rep-daily-today");
   const [generationType, setGenerationType] = useState<"daily" | "weekly" | "monthly">("daily");
@@ -912,12 +912,6 @@ export default function ReportsHub() {
                               <span className="text-[var(--status-green)] flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--status-green)] live-dot" /> Telemetry Locked
                               </span>
-                              <ContextualMenu
-                                title="Scope & Schedule"
-                                context={`Report: ${activeReport.title}, date: ${activeReport.date}, plant: ${activeReport.plant_id}`}
-                                variant="dropdown"
-                                className="scale-90"
-                              />
                             </div>
                           </div>
                         </div>
@@ -931,19 +925,10 @@ export default function ReportsHub() {
                             {summaryData.key_findings.map((finding, idx) => (
                               <li 
                                 key={idx} 
-                                className="group relative rounded-md p-2 -mx-2 hover:bg-[var(--bg-elevated)]/40 transition-all flex items-start justify-between gap-4"
+                                className="group relative rounded-md p-2 -mx-2 hover:bg-[var(--bg-elevated)]/40 transition-all flex items-start gap-2"
                               >
-                                <div className="text-xs text-[var(--text-secondary)] leading-relaxed flex items-start gap-2">
-                                  <span className="text-[var(--accent)] mt-0.5 select-none font-bold font-mono">•</span>
-                                  <span>{finding}</span>
-                                </div>
-                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                                  <ContextualMenu 
-                                    title={`Key Finding #${idx + 1}`} 
-                                    context={finding} 
-                                    variant="dropdown"
-                                  />
-                                </div>
+                                <span className="text-[var(--accent)] mt-0.5 select-none font-bold font-mono">•</span>
+                                <span className="text-xs text-[var(--text-secondary)] leading-relaxed">{finding}</span>
                               </li>
                             ))}
                           </ul>
@@ -1194,11 +1179,6 @@ export default function ReportsHub() {
                                   <h4 className="text-xs font-bold text-[var(--accent)] uppercase tracking-wider font-mono">
                                     {section.title}
                                   </h4>
-                                  <ContextualMenu
-                                    title={section.title}
-                                    context={section.content || section.items?.join(", ") || ""}
-                                    variant="dropdown"
-                                  />
                                 </div>
 
                                 {section.type === "text" && (
@@ -1210,18 +1190,8 @@ export default function ReportsHub() {
                                 {section.type === "bullets" && section.items && (
                                   <ul className="space-y-2 pl-8 list-disc text-xs text-[var(--text-secondary)] leading-relaxed">
                                     {section.items.map((item, idx) => (
-                                      <li key={idx} className="group relative rounded px-2 -mx-2 hover:bg-[var(--bg-elevated)]/20 transition-all">
-                                        <div className="flex justify-between items-center gap-4">
-                                          <span>{item}</span>
-                                          <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <ContextualMenu
-                                              title={`Action Item #${idx + 1}`}
-                                              context={item}
-                                              variant="dropdown"
-                                              className="scale-90"
-                                            />
-                                          </span>
-                                        </div>
+                                      <li key={idx}>
+                                        <span>{item}</span>
                                       </li>
                                     ))}
                                   </ul>
@@ -1246,11 +1216,6 @@ export default function ReportsHub() {
                                         <h4 className="text-xs font-bold text-[var(--accent)] uppercase tracking-wider font-mono">
                                           {section.title}
                                         </h4>
-                                        <ContextualMenu
-                                          title={section.title}
-                                          context={`Summary of Table: ${section.title}. Headers: ${section.headers?.join(", ")}`}
-                                          variant="dropdown"
-                                        />
                                       </div>
 
                                       {section.headers && section.rows && (
@@ -1263,16 +1228,10 @@ export default function ReportsHub() {
                                                     {h}
                                                   </th>
                                                 ))}
-                                                <th className="py-2.5 px-3 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono text-right w-28">
-                                                  AI Analysis
-                                                </th>
                                               </tr>
                                             </thead>
                                             <tbody>
                                               {section.rows.map((row, rIdx) => {
-                                                const rowTitle = row[0] || "Metrics Row";
-                                                const rowContext = section.headers!.map((h, i) => `${h}: ${row[i] || ""}`).join(", ");
-                                                
                                                 return (
                                                   <tr
                                                     key={rIdx}
@@ -1286,15 +1245,6 @@ export default function ReportsHub() {
                                                         {cell}
                                                       </td>
                                                     ))}
-                                                    <td className="py-1 px-3 text-right">
-                                                      <div className="inline-flex justify-end opacity-40 group-hover:opacity-100 transition-opacity">
-                                                        <ContextualMenu 
-                                                          title={rowTitle}
-                                                          context={rowContext}
-                                                          variant="row"
-                                                        />
-                                                      </div>
-                                                    </td>
                                                   </tr>
                                                 );
                                               })}

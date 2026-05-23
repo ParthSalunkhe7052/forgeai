@@ -74,7 +74,7 @@ function InfoBar() {
     >
       <div className="flex items-center gap-2">
         <span className="animate-pulse">⚠</span>
-        <span>OT LATENCY ALERT: Historian DB synchronization latency is elevated at 124ms (baseline 15ms). Sync queue buffering is active.</span>
+        <span>OT LATENCY ALERT: PLC Network ping at 124ms vs 15ms baseline. OT backbone congestion suspected.</span>
       </div>
       <div className="text-[10px] opacity-75">
         AUTOMATED AI WATCHDOG · ACTIVE
@@ -180,11 +180,11 @@ export default function ITOTDashboard() {
                 02. Active Incidents
               </span>
               <span className="text-xl font-mono text-[var(--status-amber)] mt-1.5 block font-bold">
-                {itOtData.incidents_active} P1/P2
+                {itOtData.incidents_active}
               </span>
             </div>
             <span className="text-[9px] font-mono text-[var(--text-secondary)] mt-1">
-              {itOtData.incidents_total_week} resolved this week
+              1 Critical (P1) · 3 High (P2)
             </span>
           </div>
 
@@ -192,7 +192,7 @@ export default function ITOTDashboard() {
           <div className="p-4 flex flex-col justify-between min-h-[110px]">
             <div>
               <span className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
-                03. Systems Healthy
+                03. Systems Online
               </span>
               <span className="text-xl font-mono text-white mt-1.5 block font-bold">
                 {itOtData.systems_healthy} / {itOtData.systems_total}
@@ -314,7 +314,7 @@ export default function ITOTDashboard() {
                 <span className="text-[10px] font-mono text-[var(--text-secondary)] font-bold uppercase tracking-wider">OT Bus Latency (48H)</span>
                 <span className="text-[9px] font-mono text-[var(--status-red)] flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--status-red)] animate-ping" />
-                  SYNC LAG SPITTING
+                  SYNC LAG SPIKING
                 </span>
               </div>
               <div className="h-[300px] border border-[var(--border)] rounded-lg p-3 bg-[#101116]/40 flex flex-col justify-between">
@@ -336,6 +336,7 @@ export default function ITOTDashboard() {
                         domain={[0, 450]}
                       />
                       <Tooltip
+                        cursor={false}
                         contentStyle={{
                           backgroundColor: "#14151C",
                           borderColor: "var(--border-strong)",
@@ -445,7 +446,7 @@ export default function ITOTDashboard() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
                   <span className="text-[10px] font-mono text-[var(--text-secondary)] font-bold uppercase tracking-wider">IDS Threat Feed</span>
-                  <span className="text-[9px] font-mono text-[var(--status-amber)] font-bold">3 SEC EVENTS</span>
+                  <span className="text-[9px] font-mono text-[var(--status-amber)] font-bold">3 ACTIVE ALERTS</span>
                 </div>
                 <div className="border border-[var(--border)] rounded-lg p-3 bg-[#0C0D12]/40 max-h-[140px] overflow-y-auto space-y-2">
                   {CYBER_EVENTS.map((evt) => (

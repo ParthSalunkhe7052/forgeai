@@ -32,12 +32,10 @@ const itemVariants = {
 } as const;
 
 export default function ActionsCenter() {
-  const {
-    actions,
-    approveAction,
-    assignActionOwner,
-    updateActionStatus
-  } = useDashboardStore();
+  const actions = useDashboardStore((state) => state.actions);
+  const approveAction = useDashboardStore((state) => state.approveAction);
+  const assignActionOwner = useDashboardStore((state) => state.assignActionOwner);
+  const updateActionStatus = useDashboardStore((state) => state.updateActionStatus);
 
   const [filter, setFilter] = useState<"all" | "pending" | "scheduled" | "in_progress" | "completed">("all");
 

@@ -65,6 +65,23 @@ function ErrorBanner({ message }: { message: string }) {
   );
 }
 
+function renderPaceText(subText: string) {
+  if (!subText) return null;
+  const match = subText.match(/Required pace:\s*([\d.]+)\s*T\/hr\s*\(current:\s*([\d.]+)\s*T\/hr\)/i);
+  if (match) {
+    const reqPace = parseFloat(match[1]);
+    const currPace = parseFloat(match[2]);
+    const isAmber = currPace < reqPace;
+    const colorClass = isAmber ? "text-[var(--status-amber)] font-bold" : "text-white";
+    return (
+      <>
+        Required pace: <span className={colorClass}>{match[1]}</span> T/hr (current: <span className={colorClass}>{match[2]}</span> T/hr)
+      </>
+    );
+  }
+  return subText;
+}
+
 function getNodeStatusColor(status: string) {
   const s = status.toLowerCase();
   if (s === "operational" || s === "healthy" || s === "green") return "var(--status-green)";
@@ -75,7 +92,9 @@ function getNodeStatusColor(status: string) {
 }
 
 export default function FloorDashboard() {
-  const { selectedPlantId, liveDashboardData, triggerCopilotAction } = useDashboardStore();
+  const selectedPlantId = useDashboardStore((state) => state.selectedPlantId);
+  const liveDashboardData = useDashboardStore((state) => state.liveDashboardData);
+  const triggerCopilotAction = useDashboardStore((state) => state.triggerCopilotAction);
   const [selectedNode, setSelectedNode] = useState<FloorNode | null>(null);
   const [isBottleneckSheetOpen, setIsBottleneckSheetOpen] = useState(false);
 
@@ -348,10 +367,10 @@ export default function FloorDashboard() {
               </div>
             </div>
             <div className="flex items-center justify-between text-[9px] font-mono text-[var(--text-secondary)] mt-2">
-              <span>{progressPct}% Completed</span>
+              <span>{progressPct}% · 3h 28m remaining</span>
               <span>
                 Remaining: <span className="text-white font-bold">{remainingVal}</span>{" "}
-                <span className="text-[var(--status-amber)]">({kpis.remaining.sub})</span>
+                <span className="text-[var(--text-muted)]">({renderPaceText(kpis.remaining.sub)})</span>
               </span>
             </div>
           </div>
@@ -448,7 +467,12 @@ export default function FloorDashboard() {
                 title="Logistics Shipment"
                 context={`Next Critical Shipment: ${nextCriticalShipment.material}, Quantity: ${nextCriticalShipment.quantity}, ETA: ${nextCriticalShipment.eta}, Status: ${nextCriticalShipment.status}`}
               />
-              <span className="text-[8px] font-mono text-[var(--text-muted)] truncate">{nextCriticalShipment.origin}</span>
+              <span
+                onClick={() => document.getElementById('logistics-section')?.scrollIntoView({ behavior: 'smooth' })}
+                className="text-[8px] font-mono text-[var(--text-muted)] hover:text-[var(--accent)] underline cursor-pointer truncate font-semibold"
+              >
+                Go Terminal ({nextCriticalShipment.origin})
+              </span>
             </div>
           </div>
 
@@ -903,7 +927,7 @@ export default function FloorDashboard() {
                 <ContextualMenu
                   title="Work Orders List"
                   context={`Total pending/active work orders: ${work_orders.length}`}
-                  variant="dropdown"
+                  actionQuery="Analyze current work orders and suggest priority order"
                 />
               </div>
               <div className="flex-1 overflow-y-auto">
@@ -1010,6 +1034,7 @@ export default function FloorDashboard() {
 
             {/* Shipment Log */}
             <div
+              id="logistics-section"
               className="rounded-[8px] p-5 flex flex-col"
               style={{ height: 350, background: "var(--bg-surface)", border: "1px solid var(--border)" }}
             >

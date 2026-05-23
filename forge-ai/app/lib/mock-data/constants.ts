@@ -5,11 +5,11 @@
 
 export const MOCK_DATA = {
   enterprise: {
-    revenue_mtd_cr: 125.0,
-    revenue_mtd_target_cr: 450.0,
-    revenue_mtd_prev_cr: 445.8,
+    revenue_mtd_cr: 12.5,
+    revenue_mtd_target_cr: 15.0,
+    revenue_mtd_prev_cr: 12.1,
     revenue_delta_pct: 8.2,
-    net_profit_cr: 24.0,
+    net_profit_cr: 2.4,
     net_profit_margin_pct: 19.2,
     net_profit_delta_pct: 3.1,
     utilization_pct: 84.0,
@@ -33,13 +33,27 @@ export const MOCK_DATA = {
     expected_roi_lakhs_month: 4.2,
   },
   
+  plantA: {
+    id: "mumbai-uuid",
+    name: "Plant A — Mumbai",
+    revenue_mtd_cr: 6.1,
+    revenue_mtd_prev_cr: 5.8,
+    revenue_target_mtd_cr: 7.2,
+    revenue_delta_pct: 5.2,
+    net_profit_cr: 1.2,
+    net_margin_pct: 19.7,
+    plant_health_index: 84,
+    oee_pct: 78.2,
+  },
+
   plantB: {
     id: "pune-uuid",
     name: "Plant B — Pune",
-    revenue_mtd_cr: 39.0,
-    revenue_mtd_prev_cr: 37.2,
-    revenue_delta_pct: 4.8,
-    net_profit_cr: 7.0,
+    revenue_mtd_cr: 3.9,
+    revenue_mtd_prev_cr: 3.7,
+    revenue_target_mtd_cr: 4.6,
+    revenue_delta_pct: 5.4,
+    net_profit_cr: 0.7,
     net_profit_margin_pct: 17.9,
     net_profit_delta_pct: -1.2,
     utilization_pct: 81.5,

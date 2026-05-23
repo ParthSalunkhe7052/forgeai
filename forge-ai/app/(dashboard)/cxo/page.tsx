@@ -104,7 +104,8 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
 }
 
 export default function CXODashboard() {
-  const { selectedPlantId, liveDashboardData } = useDashboardStore();
+  const selectedPlantId = useDashboardStore((state) => state.selectedPlantId);
+  const liveDashboardData = useDashboardStore((state) => state.liveDashboardData);
   const [modalType, setModalType] = useState<"health" | "risk" | null>(null);
   const [decisionState, setDecisionState] = useState<"pending" | "executing" | "executed">("pending");
 
@@ -157,7 +158,7 @@ export default function CXODashboard() {
           delta: isPune ? `${MOCK_DATA.plantB.savings_delta_pct}%` : `${MOCK_DATA.enterprise.savings_delta_pct}%`,
           top_concern: isPune ? MOCK_DATA.plantB.top_concern : MOCK_DATA.enterprise.top_concern,
           recommended_decision: isPune ? MOCK_DATA.plantB.recommended_decision : MOCK_DATA.enterprise.recommended_decision,
-          expected_roi: isPune ? `Saves ₹${MOCK_DATA.plantB.expected_roi_lakhs_month.toFixed(1)}L/month in capital loss` : `Saves ₹${MOCK_DATA.enterprise.expected_roi_lakhs_month.toFixed(1)}L/month in capital loss`,
+          expected_roi: isPune ? `Prevents ₹${MOCK_DATA.plantB.expected_roi_lakhs_month.toFixed(1)}L/month in production losses` : `Prevents ₹${MOCK_DATA.enterprise.expected_roi_lakhs_month.toFixed(1)}L/month in production losses`,
         },
       },
       charts: {
@@ -167,9 +168,9 @@ export default function CXODashboard() {
           { name: "Defects", value: 30 },
         ],
         plant_comparison: [
-          { name: "Mumbai", revenue: 45.0, oee: 85, utilization: 86 },
-          { name: "Pune", revenue: 39.0, oee: 68, utilization: 81.5 },
-          { name: "Surat", revenue: 41.0, oee: 80, utilization: 83.8 },
+          { name: "Mumbai", revenue: 6.1, oee: 85, utilization: 86 },
+          { name: "Pune", revenue: 3.9, oee: 68, utilization: 81.5 },
+          { name: "Surat", revenue: 2.5, oee: 80, utilization: 83.8 },
         ],
         energy_trend: [
           { date: "05-01", cost: 3.8, limit: 5.0 },
@@ -254,15 +255,35 @@ export default function CXODashboard() {
 
   // Dynamically compute target/prev for visual consistency across plant scales
   const revenueValueNum = parseFloat(kpis.revenue.value.replace(/[^\d.]/g, "")) || 12.5;
-  const revenueScale = revenueValueNum / 12.5;
-  const targetRevenue = (450.0 * revenueScale).toFixed(1);
-  const prevRevenue = (445.8 * revenueScale).toFixed(1);
+  let targetRevenue = "15.0";
+  let prevRevenue = "12.1";
+  if (selectedPlantId === "pune-uuid" || selectedPlantId === "pune" || kpis.revenue.value.includes("3.9")) {
+    targetRevenue = "4.6";
+    prevRevenue = "3.7";
+  } else if (selectedPlantId === "mumbai-uuid" || selectedPlantId === "mumbai" || kpis.revenue.value.includes("6.1")) {
+    targetRevenue = "7.2";
+    prevRevenue = "5.8";
+  } else if (selectedPlantId === "surat-uuid" || selectedPlantId === "surat" || kpis.revenue.value.includes("2.5")) {
+    targetRevenue = "3.2";
+    prevRevenue = "2.4";
+  }
 
   const currentMargin = parseFloat(kpis.net_profit.margin.replace("%", "")) || 19.2;
 
   // Dynamic health/risk status resolvers
-  const healthStatus = kpis.health.value >= 80 ? "OPTIMAL" : kpis.health.value >= 60 ? "DEGRADED" : "CRITICAL";
-  const healthColor = kpis.health.value >= 80 ? "var(--status-green)" : kpis.health.value >= 60 ? "var(--status-amber)" : "var(--status-red)";
+  const getHealthLabel = (oee: number, healthIndex: number): { label: string, color: string } => {
+    const composite = (healthIndex + oee) / 2;
+    if (composite >= 87) return { label: 'WORLD CLASS', color: 'var(--status-green)' };
+    if (composite >= 80) return { label: 'OPERATIONAL', color: 'var(--status-green)' };
+    if (composite >= 70) return { label: 'FAIR', color: 'var(--status-amber)' };
+    if (composite >= 60) return { label: 'DEGRADED', color: 'var(--status-amber)' };
+    return { label: 'CRITICAL', color: 'var(--status-red)' };
+  };
+
+  const oeeNum = parseFloat(kpis.utilization.value.replace("%", "")) || 78.2;
+  const healthInfo = getHealthLabel(oeeNum, kpis.health.value);
+  const healthStatus = healthInfo.label;
+  const healthColor = healthInfo.color;
   const riskColor = kpis.risk.value <= 25 ? "var(--status-green)" : kpis.risk.value <= 50 ? "var(--status-amber)" : "var(--status-red)";
 
   const DONUT_COLORS = ["#F59E0B", "#3B82F6", "#F43F5E"];
@@ -297,7 +318,7 @@ export default function CXODashboard() {
   const savingsValue = kpis.savings_opportunity?.value ?? "₹18.6 Lakhs";
   const recommendedDecision = kpis.savings_opportunity?.recommended_decision ?? "inspect bearing and approve automatic preventative replacement by May 23, 2026.";
   const riskTitle = kpis.savings_opportunity?.top_concern ?? "Furnace-2 bearing temperature has increased by 22% over 48 hours. Current: 92°C vs baseline 75°C. Bearing thermal wear projected in 2 days at 68%. Impact: ₹18.6 Lakhs. Recommended: inspect bearing and approve automatic preventative replacement by May 23, 2026.";
-  const expectedRoi = `Saves ₹4.2L/month in capital loss`;
+  const expectedRoi = `Prevents ₹4.2L/month in production losses`;
 
   return (
     <motion.div
@@ -313,16 +334,7 @@ export default function CXODashboard() {
       {/* ========================================================
           SITUATION ROOM CONSOLE LAYOUT (TOP SECTION)
           ======================================================== */}
-      <motion.div variants={itemVariants} className="relative rounded-xl border border-[var(--accent)]/30 bg-[#0B0C10] shadow-[0_0_20px_rgba(245,158,11,0.08)] overflow-hidden transition-all duration-300 hover:border-[var(--accent)]/50">
-        {/* Aesthetic Cybernetic Corners */}
-        <div className="absolute top-0 left-0 w-6 h-[2px] bg-[var(--accent)]" />
-        <div className="absolute top-0 left-0 w-[2px] h-6 bg-[var(--accent)]" />
-        <div className="absolute top-0 right-0 w-6 h-[2px] bg-[var(--accent)]" />
-        <div className="absolute top-0 right-0 w-[2px] h-6 bg-[var(--accent)]" />
-        
-        {/* Glowing Accents */}
-        <div className="absolute -top-12 -left-12 w-24 h-24 rounded-full bg-[var(--accent)]/5 blur-[50px] pointer-events-none" />
-        <div className="absolute -bottom-12 -right-12 w-24 h-24 rounded-full bg-[var(--status-red)]/5 blur-[50px] pointer-events-none" />
+      <motion.div variants={itemVariants} className="relative rounded-xl border border-[var(--border)] border-l-[3px] border-l-[var(--accent)] bg-[#0B0C10] overflow-hidden transition-all duration-300 hover:border-l-[var(--accent)]/85">
 
         {/* Console Header */}
         <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-3 bg-[var(--bg-elevated)]/30">
@@ -613,11 +625,16 @@ export default function CXODashboard() {
                       data={charts.loss_sources}
                       cx="50%"
                       cy="50%"
+                      startAngle={90}
+                      endAngle={-270}
                       innerRadius={50}
                       outerRadius={75}
                       paddingAngle={3}
                       dataKey="value"
                       label={({ percent }) => percent !== undefined ? `${(percent * 100).toFixed(0)}%` : ""}
+                      isAnimationActive={true}
+                      animationDuration={300}
+                      animationEasing="ease-out"
                     >
                       {charts.loss_sources.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
@@ -625,7 +642,7 @@ export default function CXODashboard() {
                       <Label value="TOTAL LOSS" position="center" dy={-10} style={{ fontSize: '9px', fill: 'var(--text-muted)', fontFamily: 'DM Mono' }} />
                       <Label value="₹18.6 L" position="center" dy={10} style={{ fontSize: '18px', fill: 'white', fontWeight: 'bold', fontFamily: 'DM Mono' }} />
                     </Pie>
-                    <Tooltip contentStyle={CHART_STYLE.tooltipStyle} />
+                    <Tooltip cursor={false} contentStyle={CHART_STYLE.tooltipStyle} />
                     <Legend
                       layout="horizontal"
                       verticalAlign="bottom"
@@ -660,15 +677,16 @@ export default function CXODashboard() {
               </div>
               <div className="h-[210px] min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={charts.plant_comparison} margin={{ top: 25, right: 5, left: -25, bottom: 0 }}>
+                  <BarChart data={charts.plant_comparison} margin={{ top: 25, right: 10, left: -25, bottom: 0 }}>
                     <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="name" {...axisProps} />
-                    <YAxis {...axisProps} />
-                    <Tooltip contentStyle={CHART_STYLE.tooltipStyle} />
+                    <YAxis yAxisId="left" {...axisProps} />
+                    <YAxis yAxisId="right" orientation="right" {...axisProps} />
+                    <Tooltip cursor={false} contentStyle={CHART_STYLE.tooltipStyle} />
                     <Legend wrapperStyle={{ fontSize: 10, fontFamily: "DM Mono" }} />
-                    <Bar name="Revenue (Cr)" dataKey="revenue" fill={CHART_COLORS_HEX.c1} radius={[3, 3, 0, 0]} label={renderCustomBarLabel} />
-                    <Bar name="OEE (%)" dataKey="oee" fill={CHART_COLORS_HEX.c2} radius={[3, 3, 0, 0]} label={renderCustomBarLabel} />
-                    <Bar name="Utilization (%)" dataKey="utilization" fill={CHART_COLORS_HEX.c3} radius={[3, 3, 0, 0]} label={renderCustomBarLabel} />
+                    <Bar yAxisId="right" name="Revenue (Cr)" dataKey="revenue" fill={CHART_COLORS_HEX.c1} radius={[3, 3, 0, 0]} label={renderCustomBarLabel} isAnimationActive={true} animationDuration={300} animationEasing="ease-out" />
+                    <Bar yAxisId="left" name="OEE (%)" dataKey="oee" fill={CHART_COLORS_HEX.c2} radius={[3, 3, 0, 0]} label={renderCustomBarLabel} isAnimationActive={true} animationDuration={300} animationEasing="ease-out" />
+                    <Bar yAxisId="left" name="Utilization (%)" dataKey="utilization" fill={CHART_COLORS_HEX.c3} radius={[3, 3, 0, 0]} label={renderCustomBarLabel} isAnimationActive={true} animationDuration={300} animationEasing="ease-out" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -704,10 +722,10 @@ export default function CXODashboard() {
                     <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="date" {...axisProps} />
                     <YAxis {...axisProps} />
-                    <Tooltip contentStyle={CHART_STYLE.tooltipStyle} />
+                    <Tooltip cursor={false} contentStyle={CHART_STYLE.tooltipStyle} />
                     <Legend wrapperStyle={{ fontSize: 10, fontFamily: "DM Mono" }} />
-                    <Area name="Cost Shading" type="monotone" dataKey="cost" fill="#3B82F6" stroke="none" fillOpacity={0.05} />
-                    <Line name="Daily Cost (Lakhs)" type="monotone" dataKey="cost" stroke={CHART_COLORS_HEX.c2} strokeWidth={1.5} dot={(props: any) => {
+                    <Area name="Cost Shading" type="monotone" dataKey="cost" fill="#3B82F6" stroke="none" fillOpacity={0.05} isAnimationActive={true} animationDuration={300} animationEasing="ease-out" />
+                    <Line name="Daily Cost (Lakhs)" type="monotone" dataKey="cost" stroke={CHART_COLORS_HEX.c2} strokeWidth={1.5} isAnimationActive={true} animationDuration={300} animationEasing="ease-out" dot={(props: any) => {
                       const { cx, cy, value } = props;
                       if (value > 4.7) {
                         return <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={4} fill="var(--status-red)" stroke="white" strokeWidth={1} />;
@@ -745,13 +763,13 @@ export default function CXODashboard() {
                     <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="month" {...axisProps} />
                     <YAxis {...axisProps} />
-                    <Tooltip contentStyle={CHART_STYLE.tooltipStyle} />
+                    <Tooltip cursor={false} contentStyle={CHART_STYLE.tooltipStyle} />
                     <Legend wrapperStyle={{ fontSize: 10, fontFamily: "DM Mono" }} />
-                    <Area name="Confidence Interval" type="monotone" dataKey="band" stroke="none" fill="rgba(156, 163, 175, 0.08)" />
-                    <Line name="Actual Revenue" type="monotone" dataKey="actual" stroke={CHART_COLORS_HEX.c1} strokeWidth={2} />
-                    <Line name="AI Forecast Model" type="monotone" dataKey="forecast" stroke={CHART_COLORS_HEX.c2} strokeWidth={1.5} strokeDasharray="3 3" />
-                    <Line name="Optimistic Path" type="monotone" dataKey="optimistic" stroke="var(--status-green)" strokeWidth={1} strokeDasharray="3 3" dot={false} />
-                    <Line name="Pessimistic Path" type="monotone" dataKey="pessimistic" stroke="var(--status-red)" strokeWidth={1} strokeDasharray="3 3" dot={false} />
+                    <Area name="Confidence Interval" type="monotone" dataKey="band" stroke="none" fill="rgba(156, 163, 175, 0.08)" isAnimationActive={true} animationDuration={300} animationEasing="ease-out" />
+                    <Line name="Actual Revenue" type="monotone" dataKey="actual" stroke={CHART_COLORS_HEX.c1} strokeWidth={2} isAnimationActive={true} animationDuration={300} animationEasing="ease-out" />
+                    <Line name="AI Forecast Model" type="monotone" dataKey="forecast" stroke={CHART_COLORS_HEX.c2} strokeWidth={1.5} strokeDasharray="3 3" isAnimationActive={true} animationDuration={300} animationEasing="ease-out" />
+                    <Line name="Optimistic Path" type="monotone" dataKey="optimistic" stroke="var(--status-green)" strokeWidth={1} strokeDasharray="3 3" dot={false} isAnimationActive={true} animationDuration={300} animationEasing="ease-out" />
+                    <Line name="Pessimistic Path" type="monotone" dataKey="pessimistic" stroke="var(--status-red)" strokeWidth={1} strokeDasharray="3 3" dot={false} isAnimationActive={true} animationDuration={300} animationEasing="ease-out" />
                     <ReferenceLine x="May" stroke="var(--accent)" strokeDasharray="3 3" strokeWidth={1}>
                       <Label value="TODAY (May 22)" position="insideTopLeft" fill="var(--accent)" style={{ fontSize: 9, fontFamily: 'DM Mono' }} />
                     </ReferenceLine>
